@@ -7,6 +7,8 @@ package main
 import (
 	"encoding/json"
 	"github.com/fatih/color"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"log"
 	"sync"
 	"time"
@@ -14,7 +16,8 @@ import (
 
 // Room maintains the set of active clients and broadcasts messages to the clients.
 type Room struct {
-	mu sync.Mutex
+	name string
+	mu   sync.Mutex
 
 	// channels
 	chBroadcastAll       chan []byte
@@ -38,8 +41,9 @@ type Room struct {
 	broadcastsToAck map[int32]*Broadcast
 }
 
-func newRoom() *Room {
+func newRoom(name string) *Room {
 	return &Room{
+		name:                 name,
 		chBroadcastAll:       make(chan []byte, 256),
 		chBroadcast:          make(chan Broadcast, 256),
 		chVerifyBroadcastNum: make(chan int32),
@@ -58,8 +62,14 @@ func newRoom() *Room {
 	}
 }
 
+// GetDatabaseSessionCopy create a copy of opened session
+func (room *Room) GetDatabaseSessionCopy() (*mgo.Database, *mgo.Session) {
+	sessionCopy := session.Copy()
+	return sessionCopy.DB(room.name), sessionCopy
+}
+
 func (room *Room) run() {
-	log.Println("Room run")
+	log.Println("Room run ", room.name)
 
 	for {
 		select {
@@ -350,7 +360,7 @@ func (room *Room) ackAction(action *Action) {
 
 func (room *Room) playerStatAction(action *Action) {
 
-	db, s := GetDatabaseSessionCopy()
+	db, s := room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	playerID := action.fromPlayerID
@@ -402,7 +412,7 @@ func (room *Room) playerStatAction(action *Action) {
 	if err := json.Unmarshal(action.message, &stat); err != nil {
 		panic(err)
 	}
-	playerStatItems := statItems(playerID, stat.LastN)
+	playerStatItems := room.statItems(playerID, stat.LastN)
 
 	js, err := json.Marshal(struct {
 		MsgFunc     string     `json:"msg_func"`
@@ -446,7 +456,7 @@ func (room *Room) createTableAction(action *Action) {
 	if err := json.Unmarshal(action.message, &dic); err != nil {
 		panic(err)
 	}
-	table := newTable(room, dic.PlayersID, dic.DiceNum, dic.Bet, dic.Private)
+	table := newTable(room, 4, dic.PlayersID, dic.DiceNum, dic.Bet, dic.Private)
 	room.mu.Lock()
 
 	p.TableID = &table.ID
@@ -556,4 +566,23 @@ func (room *Room) cleanBroadcastsToAck(playerID string) {
 			delete(room.broadcastsToAck, b.msgNum)
 		}
 	}
+}
+
+func (room *Room) statItems(playerID string, lastN *int) []StatItem {
+	db, s := room.GetDatabaseSessionCopy()
+	defer s.Close()
+
+	statItems := []StatItem{}
+	pipeline := []bson.M{
+		{"$match": bson.M{"player_id": playerID}},
+	}
+	if lastN != nil {
+		pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
+		pipeline = append(pipeline, bson.M{"$limit": *lastN})
+	}
+	err := db.C("statItems").Pipe(pipeline).All(&statItems)
+	if err != nil {
+		log.Println(err)
+	}
+	return statItems
 }

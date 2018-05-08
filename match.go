@@ -3,11 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"log"
 	"math/rand"
 	"time"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Match ...
@@ -45,7 +44,7 @@ func (m *Match) run() {
 
 func (m *Match) takeInitialBet() {
 
-	db, s := GetDatabaseSessionCopy()
+	db, s := m.table.room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	m.table.room.mu.Lock()
@@ -97,7 +96,7 @@ func (m *Match) leave(leavePlayerID string) {
 		return
 	}
 
-	db, s := GetDatabaseSessionCopy()
+	db, s := m.table.room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	m.table.room.mu.Lock()
@@ -139,7 +138,7 @@ func (m *Match) endAction(action *Action) {
 	log.Println("m.table.winnerID winner: ", m.table.MatchResult.WinnerID)
 	m.chWaitNextPTurn <- action
 
-	db, s := GetDatabaseSessionCopy()
+	db, s := m.table.room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	m.table.room.mu.Lock()

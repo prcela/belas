@@ -10,6 +10,7 @@ import (
 // Table
 type Table struct {
 	ID                string       `json:"id"`
+	Capacity          int          `json:"capacity"`
 	PlayersID         []string     `json:"players_id"`
 	Bet               int64        `json:"bet"`
 	Private           bool         `json:"private"`
@@ -20,9 +21,10 @@ type Table struct {
 	room *Room
 }
 
-func newTable(room *Room, playersID []string, diceNum int, bet int64, private bool) *Table {
+func newTable(room *Room, capacity int, playersID []string, diceNum int, bet int64, private bool) *Table {
 	return &Table{
 		ID:                fmt.Sprintf("%x", rand.Int()),
+		Capacity:          capacity,
 		PlayersID:         playersID,
 		Bet:               bet,
 		Private:           private,
@@ -67,7 +69,7 @@ func (table *Table) joinAction(action *Action) {
 		return
 	}
 
-	if len(table.PlayersID) == 4 {
+	if table.isFull() {
 		m := newMatch(table)
 		table.Match = m
 		table.room.mu.Unlock()
@@ -128,7 +130,7 @@ func (table *Table) rematchAction(action *Action) {
 		}
 	}
 
-	if len(table.PlayersForRematch) == 4 {
+	if len(table.PlayersForRematch) == table.Capacity {
 		table.room.mu.Lock()
 		m := newMatch(table)
 		table.Match = m
@@ -144,8 +146,12 @@ func (table *Table) rematchAction(action *Action) {
 
 }
 
+func (table *Table) isFull() bool {
+	return len(table.PlayersID) >= table.Capacity
+}
+
 func (table *Table) sitPlayer(playerID string) bool {
-	if len(table.PlayersID) >= 2 {
+	if table.isFull() {
 		log.Println("Ooops table is full!")
 		return false
 	}

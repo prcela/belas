@@ -2,13 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2/bson"
+	"log"
+	"net/http"
+	"time"
 )
 
 const (
@@ -152,7 +151,7 @@ func (c *Client) processMessage(message []byte) {
 	case "stat_items":
 		playerID := dic["player_id"].(string)
 		log.Println("playerId: ", playerID)
-		playerStatItems := statItems(playerID, nil)
+		playerStatItems := c.room.statItems(playerID, nil)
 		js, err := json.Marshal(struct {
 			MsgFunc   string     `json:"msg_func"`
 			PlayerID  string     `json:"player_id"`
@@ -248,27 +247,8 @@ func serveWs(room *Room, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-func statItems(playerID string, lastN *int) []StatItem {
-	db, s := GetDatabaseSessionCopy()
-	defer s.Close()
-
-	statItems := []StatItem{}
-	pipeline := []bson.M{
-		{"$match": bson.M{"player_id": playerID}},
-	}
-	if lastN != nil {
-		pipeline = append(pipeline, bson.M{"$sort": bson.M{"timestamp": -1}})
-		pipeline = append(pipeline, bson.M{"$limit": *lastN})
-	}
-	err := db.C("statItems").Pipe(pipeline).All(&statItems)
-	if err != nil {
-		log.Println(err)
-	}
-	return statItems
-}
-
 func (c *Client) updatePlayer(message []byte) {
-	db, s := GetDatabaseSessionCopy()
+	db, s := c.room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	var player *Player
@@ -287,7 +267,7 @@ func (c *Client) updatePlayer(message []byte) {
 }
 
 func (c *Client) addStatItem(message []byte) {
-	db, s := GetDatabaseSessionCopy()
+	db, s := c.room.GetDatabaseSessionCopy()
 	defer s.Close()
 
 	var statItem *StatItem

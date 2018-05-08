@@ -27,12 +27,12 @@ func main() {
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
 
-	room := newRoom()
-	go room.run()
+	roomBela := newRoom("bela")
+	go roomBela.run()
 
-	http.HandleFunc("/chat", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/bela", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("request", r)
-		serveWs(room, w, r)
+		serveWs(roomBela, w, r)
 	})
 
 	if runtime.GOOS == "darwin" {

@@ -17,11 +17,13 @@ type Table struct {
 	Match             *Match       `json:"match"`
 	PlayersForRematch []string     `json:"players_for_rematch"`
 	MatchResult       *MatchResult `json:"match_result,omitempty"`
+	GameType          int          `json:"game_type"`
+	UpToPoints        int          `json:"up_to_points"`
 
 	room *Room
 }
 
-func newTable(room *Room, capacity int, playersID []string, diceNum int, bet int64, private bool) *Table {
+func newTable(room *Room, capacity int, playersID []string, bet int64, private bool, gameType int, upToPoints int) *Table {
 	return &Table{
 		ID:                fmt.Sprintf("%x", rand.Int()),
 		Capacity:          capacity,
@@ -30,6 +32,8 @@ func newTable(room *Room, capacity int, playersID []string, diceNum int, bet int
 		Private:           private,
 		PlayersForRematch: []string{},
 		MatchResult:       nil,
+		GameType:          gameType,
+		UpToPoints:        upToPoints,
 		room:              room,
 	}
 }

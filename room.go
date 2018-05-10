@@ -448,15 +448,17 @@ func (room *Room) createTableAction(action *Action) {
 	}
 
 	var dic struct {
-		DiceNum   int      `json:"dice_num"`
-		Bet       int64    `json:"bet"`
-		Private   bool     `json:"private"`
-		PlayersID []string `json:"players_id"`
+		TurnDuration int      `json:"turn_duration"`
+		Bet          int64    `json:"bet"`
+		Private      bool     `json:"private"`
+		PlayersID    []string `json:"players_id"`
+		GameType     int      `json:"game_type"`
+		UpToPoints   int      `json:"up_to_points"`
 	}
 	if err := json.Unmarshal(action.message, &dic); err != nil {
 		panic(err)
 	}
-	table := newTable(room, 4, dic.PlayersID, dic.DiceNum, dic.Bet, dic.Private)
+	table := newTable(room, 4, dic.PlayersID, dic.Bet, dic.Private, dic.GameType, dic.UpToPoints)
 	room.mu.Lock()
 
 	p.TableID = &table.ID

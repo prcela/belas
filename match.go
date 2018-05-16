@@ -17,6 +17,7 @@ type Match struct {
 	TurnDuration        int      `json:"turn_duration"`
 
 	table           *Table
+	cardGame        *CardGame
 	WaitDurations   []time.Duration
 	chWaitNextPTurn chan *Action
 	chLeave         chan string
@@ -29,7 +30,8 @@ func newMatch(table *Table) *Match {
 		IndexOfPlayerOnTurn: 0,
 		TurnDuration:        60,
 		table:               table,
-		WaitDurations:       []time.Duration{0, 0},
+		cardGame:            table.room.newCardGame(),
+		WaitDurations:       []time.Duration{0, 0, 0, 0},
 		chWaitNextPTurn:     make(chan *Action),
 	}
 }
@@ -40,6 +42,7 @@ func (m *Match) run() {
 	}
 	go m.notifyStarted()
 	go m.waitForNextPlayerTurn(m.PlayersID[1])
+	m.cardGame.run()
 }
 
 func (m *Match) takeInitialBet() {
@@ -100,11 +103,11 @@ func (m *Match) leave(leavePlayerID string) {
 	defer s.Close()
 
 	m.table.room.mu.Lock()
-	m.table.MatchResult = newMatchResult(m.table.PlayersID, []int{0, 0}, m.WaitDurations)
+	m.table.MatchResult = newMatchResult(m.table.PlayersID, []int{0, 0, 0, 0}, m.WaitDurations)
 	for idxPlayer, playerID := range m.PlayersID {
 		if player := m.table.room.players[playerID]; player != nil {
 			if player.ID != leavePlayerID {
-				// this player wins
+				// this player wins // FIXME!!!!
 				m.table.MatchResult.WinnerID = playerID
 				m.table.MatchResult.TotalWinnerID = playerID
 				m.table.MatchResult.Scores[idxPlayer] = 1

@@ -35,6 +35,15 @@ func main() {
 		serveWs(roomBela, w, r)
 	})
 
+	http.HandleFunc("/room_info", func(w http.ResponseWriter, r *http.Request) {
+
+		js := roomBela.info()
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+
+	})
+
 	if runtime.GOOS == "darwin" {
 		http.ListenAndServe(":3000", nil)
 	} else {

@@ -63,27 +63,39 @@ func (table *Table) unregisterMatch() {
 }
 
 func (table *Table) joinAction(action *Action) {
-	table.room.mu.Lock()
+	log.Println("Table.joinAction")
 
 	joinPlayer := table.room.players[action.fromPlayerID]
 	table.PlayersForRematch = []string{}
 	if !table.sitPlayer(joinPlayer.ID) {
 		log.Println("Can't join to table")
-		table.room.mu.Unlock()
 		return
 	}
+
+	js, err := json.Marshal(struct {
+		MsgFunc        string `json:"msg_func"`
+		Table          *Table `json:"table"`
+		JoinedPlayerID string `json:"joined_player_id"`
+	}{
+		MsgFunc:        "join_table",
+		Table:          table,
+		JoinedPlayerID: action.fromPlayerID,
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println("Broadcasting join_table message")
+	table.room.chBroadcast <- Broadcast{playersID: table.PlayersID, message: js}
 
 	if table.isFull() {
 		m := newMatch(table)
 		table.Match = m
-		table.room.mu.Unlock()
 		m.takeInitialBet()
 		m.run()
 		log.Println("Created new match")
 	}
-
-	table.room.chBroadcastAll <- table.room.info()
-
 }
 
 func (table *Table) leave(leavePlayerID string) {

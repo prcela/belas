@@ -588,3 +588,10 @@ func (room *Room) statItems(playerID string, lastN *int) []StatItem {
 	}
 	return statItems
 }
+
+func (room *Room) newCardGame() CardGame {
+	if room.name == "bela" {
+		return &BelaGame{}
+	}
+	return &LorumGame{}
+}

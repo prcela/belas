@@ -19,8 +19,6 @@ type Player struct {
 	missedMessages []MissedMessage
 	toAck          map[int32]bool
 
-	// timeLastConnected    *time.Time
-	// timeLastDisconnected *time.Time
 	chWaitClient     chan *Client // wait for new client
 	waitingForClient bool
 }

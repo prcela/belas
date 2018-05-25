@@ -16,9 +16,11 @@ type Match struct {
 	IndexOfPlayerOnTurn int      `json:"ìndex_of_player_on_turn"`
 	TurnDuration        int      `json:"turn_duration"`
 
-	table           *Table
-	cardGame        *CardGame
-	WaitDurations   []time.Duration
+	table         *Table
+	cardGame      CardGame
+	WaitDurations []time.Duration
+	chPlayerTurn  chan *Action
+
 	chWaitNextPTurn chan *Action
 	chLeave         chan string
 }
@@ -33,6 +35,7 @@ func newMatch(table *Table) *Match {
 		cardGame:            table.room.newCardGame(),
 		WaitDurations:       []time.Duration{0, 0, 0, 0},
 		chWaitNextPTurn:     make(chan *Action),
+		chPlayerTurn:        make(chan *Action),
 	}
 }
 
@@ -40,9 +43,49 @@ func (m *Match) run() {
 	if m == nil {
 		return
 	}
-	go m.notifyStarted()
-	go m.waitForNextPlayerTurn(m.PlayersID[1])
-	m.cardGame.run()
+	m.notifyStarted()
+	nextStep := m.cardGame.run()
+	ticker := time.NewTicker(nextStep.WaitDuration)
+
+	process := func(nextStep CardGameStep) {
+		if nextStep.WaitDuration > 0 {
+			ticker = time.NewTicker(nextStep.WaitDuration)
+		}
+
+		msgNum := newMsgNum()
+		js, err := json.Marshal(struct {
+			MsgFunc         string           `json:"msg_func"`
+			CardTransitions []CardTransition `json:"transitions"`
+			MsgNum          int32            `json:"msg_num"`
+		}{
+			MsgFunc:         "transitions",
+			CardTransitions: nextStep.Transitions,
+			MsgNum:          msgNum,
+		})
+
+		if err != nil {
+			log.Println(err)
+		}
+		m.table.room.chBroadcast <- Broadcast{
+			playersID: m.table.PlayersID,
+			message:   js,
+			msgNum:    msgNum,
+		}
+	}
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("match.run: ticker.C")
+			nextStep := m.cardGame.nextStep()
+			ticker.Stop()
+			process(nextStep)
+		case action := <-m.chPlayerTurn:
+			log.Println("match.run: chPlayerTurn")
+			nextStep := m.cardGame.onPlayerAction(action)
+			process(nextStep)
+		}
+	}
 }
 
 func (m *Match) takeInitialBet() {

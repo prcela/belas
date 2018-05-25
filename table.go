@@ -93,7 +93,7 @@ func (table *Table) joinAction(action *Action) {
 		m := newMatch(table)
 		table.Match = m
 		m.takeInitialBet()
-		m.run()
+		go m.run()
 		log.Println("Created new match")
 	}
 }

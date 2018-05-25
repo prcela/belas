@@ -3,13 +3,18 @@ package main
 type LorumGame struct {
 }
 
-func (b *LorumGame) allCards() []Card {
-	return []Card{}
+func (lorum *LorumGame) run() CardGameStep {
+	return CardGameStep{}
 }
 
-func (b *LorumGame) run() {
+func (lorum *LorumGame) groups() []CardGroup {
+	return []CardGroup{}
 }
 
-func (b *LorumGame) cards(groupName string) []Card {
-	return []Card{}
+func (lorum *LorumGame) nextStep() CardGameStep {
+	return CardGameStep{}
+}
+
+func (lorum *LorumGame) onPlayerAction(action *Action) CardGameStep {
+	return CardGameStep{}
 }

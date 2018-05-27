@@ -7,8 +7,8 @@ func (lorum *LorumGame) run() CardGameStep {
 	return CardGameStep{}
 }
 
-func (lorum *LorumGame) groups() []CardGroup {
-	return []CardGroup{}
+func (lorum *LorumGame) groups() []*CardGroup {
+	return []*CardGroup{}
 }
 
 func (lorum *LorumGame) nextStep() CardGameStep {

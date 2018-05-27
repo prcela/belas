@@ -21,24 +21,31 @@ type CardTransition struct {
 	Duration     float32 `json:"duration"`
 }
 
+type CardEnabledMove struct {
+	Card      Card    `json:"card"`
+	ToGroupId *string `json:"to_group_id"`
+}
+
 type CardGameStep struct {
-	WaitDuration time.Duration
-	Transitions  []CardTransition
+	WaitDuration     time.Duration
+	Transitions      []CardTransition
+	EnabledMoves     map[int][]CardEnabledMove
+	SendCompleteGame bool
 }
 
 type CardGame interface {
 	run() CardGameStep
 	nextStep() CardGameStep
 	onPlayerAction(action *Action) CardGameStep
-	groups() []CardGroup
+	groups() []*CardGroup
 }
 
 type CardGroup struct {
-	id    string
-	Cards []Card
+	id    string `json:"id"`
+	Cards []Card `json:"cards"`
 }
 
-func (group CardGroup) shuffle() {
+func (group *CardGroup) shuffle() {
 	perm := rand.Perm(len(group.Cards))
 	dest := make([]Card, len(group.Cards))
 	copy(dest, group.Cards)

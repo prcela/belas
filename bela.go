@@ -12,26 +12,26 @@ const (
 )
 
 type BelaGame struct {
-	State               int
-	InitialGroup        CardGroup
-	HandGroups          []CardGroup
-	TalonGroups         []CardGroup
-	IdxPlayerOnTurn     int
-	IdxPlayerStartRound int
+	State               int          `json:"state"`
+	InitialGroup        *CardGroup   `json:"initial_group"`
+	HandGroups          []*CardGroup `json:"hand_groups"`
+	TalonGroups         []*CardGroup `json:"talon_groups"`
+	IdxPlayerOnTurn     int          `json:"idx_player_on_turn"`
+	IdxPlayerStartRound int          `json:"idx_player_start_round"`
 }
 
 func (bela *BelaGame) run() CardGameStep {
-	bela.InitialGroup = CardGroup{id: "Initial"}
-	bela.HandGroups = []CardGroup{
-		CardGroup{id: "Hand0"},
-		CardGroup{id: "Hand1"},
-		CardGroup{id: "Hand2"},
-		CardGroup{id: "Hand3"}}
-	bela.TalonGroups = []CardGroup{
-		CardGroup{id: "Talon0"},
-		CardGroup{id: "Talon1"},
-		CardGroup{id: "Talon2"},
-		CardGroup{id: "Talon3"}}
+	bela.InitialGroup = &CardGroup{id: "Initial"}
+	bela.HandGroups = []*CardGroup{
+		&CardGroup{id: "Hand0"},
+		&CardGroup{id: "Hand1"},
+		&CardGroup{id: "Hand2"},
+		&CardGroup{id: "Hand3"}}
+	bela.TalonGroups = []*CardGroup{
+		&CardGroup{id: "Talon0"},
+		&CardGroup{id: "Talon1"},
+		&CardGroup{id: "Talon2"},
+		&CardGroup{id: "Talon3"}}
 
 	cards := []Card{}
 	for _, boja := range []string{"žir", "bundeva", "list", "srce"} {
@@ -46,8 +46,9 @@ func (bela *BelaGame) run() CardGameStep {
 	bela.State = BelaStateInit
 
 	return CardGameStep{
-		WaitDuration: time.Second,
-		Transitions:  []CardTransition{},
+		WaitDuration:     time.Second,
+		Transitions:      []CardTransition{},
+		SendCompleteGame: true,
 	}
 
 }
@@ -74,6 +75,7 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 }
 
 func (bela *BelaGame) dealStep() CardGameStep {
+	log.Println("dealStep")
 	step := CardGameStep{}
 	for idxGroup, group := range bela.HandGroups {
 		for i := 0; i < 7; i++ {
@@ -88,20 +90,30 @@ func (bela *BelaGame) dealStep() CardGameStep {
 				WaitDuration: 0.2*float32(i) + 1.2*float32(idxGroup),
 				Duration:     0.5,
 			})
-			bela.moveCard(&bela.InitialGroup, fromIdx, &group)
+			bela.moveCard(bela.InitialGroup, fromIdx, group)
 		}
 	}
-	step.WaitDuration = time.Second
+	step.WaitDuration = 5 * time.Second
 	bela.State = BelaStateDealed
 	return step
 }
 
 func (bela *BelaGame) callStep() CardGameStep {
-	return CardGameStep{}
+	log.Println("callStep")
+	enabledMoves := []CardEnabledMove{}
+	log.Println(bela.HandGroups[bela.IdxPlayerOnTurn].Cards)
+	for _, card := range bela.HandGroups[bela.IdxPlayerOnTurn].Cards {
+		enabledMoves = append(enabledMoves, CardEnabledMove{Card: card})
+	}
+	m := map[int][]CardEnabledMove{bela.IdxPlayerOnTurn: enabledMoves}
+	log.Println("m", m)
+	return CardGameStep{
+		EnabledMoves: m,
+	}
 }
 
-func (bela *BelaGame) groups() []CardGroup {
-	result := []CardGroup{bela.InitialGroup}
+func (bela *BelaGame) groups() []*CardGroup {
+	result := []*CardGroup{bela.InitialGroup}
 	for _, group := range bela.HandGroups {
 		result = append(result, group)
 	}

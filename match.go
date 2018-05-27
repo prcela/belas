@@ -45,21 +45,44 @@ func (m *Match) run() {
 	}
 	m.notifyStarted()
 	nextStep := m.cardGame.run()
-	ticker := time.NewTicker(nextStep.WaitDuration)
+	var ticker *time.Ticker
 
 	process := func(nextStep CardGameStep) {
 		if nextStep.WaitDuration > 0 {
 			ticker = time.NewTicker(nextStep.WaitDuration)
 		}
 
+		if nextStep.SendCompleteGame {
+			msgNum := newMsgNum()
+			js, err := json.Marshal(struct {
+				MsgFunc  string   `json:"msg_func"`
+				MsgNum   int32    `json:"msg_num"`
+				CardGame CardGame `json:"game"`
+			}{
+				MsgFunc:  "game",
+				MsgNum:   msgNum,
+				CardGame: m.cardGame,
+			})
+			if err != nil {
+				log.Println(err)
+			}
+			m.table.room.chBroadcast <- Broadcast{
+				playersID: m.table.PlayersID,
+				message:   js,
+				msgNum:    msgNum,
+			}
+		}
+
 		msgNum := newMsgNum()
 		js, err := json.Marshal(struct {
-			MsgFunc         string           `json:"msg_func"`
-			CardTransitions []CardTransition `json:"transitions"`
-			MsgNum          int32            `json:"msg_num"`
+			MsgFunc         string                    `json:"msg_func"`
+			CardTransitions []CardTransition          `json:"transitions"`
+			EnabledMoves    map[int][]CardEnabledMove `json:"enabled_moves"`
+			MsgNum          int32                     `json:"msg_num"`
 		}{
-			MsgFunc:         "transitions",
+			MsgFunc:         "step",
 			CardTransitions: nextStep.Transitions,
+			EnabledMoves:    nextStep.EnabledMoves,
 			MsgNum:          msgNum,
 		})
 
@@ -72,6 +95,8 @@ func (m *Match) run() {
 			msgNum:    msgNum,
 		}
 	}
+
+	process(nextStep)
 
 	for {
 		select {

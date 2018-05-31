@@ -14,7 +14,6 @@ type Card struct {
 type CardTransition struct {
 	Card         Card    `json:"card"`
 	FromGroupId  string  `json:"from_group_id"`
-	FromIdx      int     `json:"from_idx"`
 	ToGroupId    string  `json:"to_group_id"`
 	ToIdx        int     `json:"to_idx"`
 	WaitDuration float32 `json:"wait_duration"`
@@ -22,8 +21,9 @@ type CardTransition struct {
 }
 
 type CardEnabledMove struct {
-	Card      Card    `json:"card"`
-	ToGroupId *string `json:"to_group_id"`
+	FromGroupId string  `json:"from_group_id"`
+	Card        Card    `json:"card"`
+	ToGroupId   *string `json:"to_group_id"`
 }
 
 type CardGameStep struct {
@@ -38,11 +38,14 @@ type CardGame interface {
 	nextStep() CardGameStep
 	onPlayerAction(action *Action) CardGameStep
 	groups() []*CardGroup
+	group(ID string) *CardGroup
 }
 
 type CardGroup struct {
-	id    string `json:"id"`
-	Cards []Card `json:"cards"`
+	ID         string `json:"id"`
+	Cards      []Card `json:"cards"`
+	Capacity   int    `json:"capacity"`
+	Visibility int    `json:"visibility"` // 0 = hidden, 1 = shown to local player only, 2 = visible
 }
 
 func (group *CardGroup) shuffle() {

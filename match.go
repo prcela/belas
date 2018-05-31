@@ -253,55 +253,9 @@ func (m *Match) endAction(action *Action) {
 }
 
 func (m *Match) turnAction(action *Action) {
-	var dic struct {
-		Turn     string `json:"turn"`
-		PlayerID string `json:"id"`
-	}
-	if err := json.Unmarshal(action.message, &dic); err != nil {
-		panic(err)
-	}
 
 	otherPlayersInMatch := otherPlayersID(m.PlayersID, action.fromPlayerID)
 	m.table.room.chBroadcast <- Broadcast{playersID: otherPlayersInMatch, message: action.message, msgNum: action.msgNum}
 
-	if dic.Turn == "nextP" {
-		log.Println("Next turn")
-		m.chWaitNextPTurn <- action
-		go m.waitForNextPlayerTurn(action.fromPlayerID)
-		log.Println("Do ovdje nisam nikad stigo!")
-	}
-}
-
-func (m *Match) waitForNextPlayerTurn(onePlayerWhoWaitsID string) {
-	period := time.Duration(m.TurnDuration+10) * time.Second
-	ticker := time.NewTicker(period)
-	timeStartWait := time.Now()
-
-	defer func() {
-		ticker.Stop()
-	}()
-
-	for {
-		select {
-		case <-m.chWaitNextPTurn:
-			log.Println("Next turn came. Finished.")
-			ticker.Stop()
-			for idx, playerID := range m.PlayersID {
-				if playerID == onePlayerWhoWaitsID {
-					m.WaitDurations[idx] += time.Now().Sub(timeStartWait)
-				}
-			}
-			return
-		case <-ticker.C:
-			log.Println("Timeout in waiting for player next turn!")
-			if m != nil && m.table != nil {
-				turnTimeout := TurnTimeout{
-					winPlayerID: onePlayerWhoWaitsID,
-					tableID:     m.table.ID,
-				}
-				m.table.room.chTurnTimeout <- turnTimeout
-			}
-			return
-		}
-	}
+	m.chPlayerTurn <- action
 }

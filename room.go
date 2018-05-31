@@ -285,12 +285,10 @@ func (room *Room) run() {
 			case "create_table":
 				room.createTableAction(action)
 
-			case "join_table", "rematch":
-				room.forwardToTableAction(action)
+			case "join_table":
+				room.joinTableAction(action)
 
-				room.chBroadcastAll <- room.info()
-
-			case "end_match", "leave_table":
+			case "end_match", "rematch", "leave_table":
 				room.forwardToTableAction(action)
 
 				room.chBroadcastAll <- room.info()
@@ -469,36 +467,49 @@ func (room *Room) createTableAction(action *Action) {
 
 }
 
-func (room *Room) forwardToTableAction(action *Action) {
-
+func (room *Room) joinTableAction(action *Action) {
 	var dic struct {
 		TableID string `json:"table_id"`
 	}
 	if err := json.Unmarshal(action.message, &dic); err != nil {
 		panic(err)
 	}
-	log.Println("Forward to tableID:", dic.TableID)
-	log.Println("U table stigo action:", action.name)
+
+	log.Println("joinTableAction")
 
 	if table := room.tables[dic.TableID]; table != nil {
-		switch action.name {
-		case "join_table":
-			table.joinAction(action)
+		table.joinAction(action)
+	}
+}
 
-		case "leave_table":
-			table.leaveAction(action)
-			if len(table.PlayersID) == 0 {
-				room.unregisterTable(table)
+func (room *Room) forwardToTableAction(action *Action) {
+
+	fromPlayer := room.players[action.fromPlayerID]
+	tableID := fromPlayer.TableID
+	log.Println("forward to table action:", action.name)
+	if tableID != nil {
+		log.Println("Forward to tableID:", tableID)
+
+		if table := room.tables[*tableID]; table != nil {
+			switch action.name {
+			case "join_table":
+				table.joinAction(action)
+
+			case "leave_table":
+				table.leaveAction(action)
+				if len(table.PlayersID) == 0 {
+					room.unregisterTable(table)
+				}
+			case "end_match", "turn":
+				log.Println("table.Match.chAction <- action  match:", table.Match)
+				table.forwardToMatchAction(action)
+			case "rematch":
+				table.rematchAction(action)
 			}
-		case "end_match", "turn":
-			log.Println("table.Match.chAction <- action  match:", table.Match)
-			table.forwardToMatchAction(action)
-		case "rematch":
-			table.rematchAction(action)
+		} else {
+			log.Println("Table is nil!!!!")
+			log.Println(room.tables)
 		}
-	} else {
-		log.Println("Table is nil!!!!")
-		log.Println(room.tables)
 	}
 }
 

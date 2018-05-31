@@ -18,3 +18,7 @@ func (lorum *LorumGame) nextStep() CardGameStep {
 func (lorum *LorumGame) onPlayerAction(action *Action) CardGameStep {
 	return CardGameStep{}
 }
+
+func (lorum *LorumGame) group(ID string) *CardGroup {
+	return nil
+}

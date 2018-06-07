@@ -492,8 +492,6 @@ func (room *Room) forwardToTableAction(action *Action) {
 
 		if table := room.tables[*tableID]; table != nil {
 			switch action.name {
-			case "join_table":
-				table.joinAction(action)
 
 			case "leave_table":
 				table.leaveAction(action)

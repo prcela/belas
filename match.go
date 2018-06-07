@@ -48,7 +48,13 @@ func (m *Match) run() {
 	var ticker *time.Ticker
 
 	process := func(nextStep CardGameStep) {
+		if ticker != nil {
+			log.Println("ticker stopped")
+			ticker.Stop()
+		}
+
 		if nextStep.WaitDuration > 0 {
+			log.Println("NewTicker:", nextStep.WaitDuration)
 			ticker = time.NewTicker(nextStep.WaitDuration)
 		}
 
@@ -103,7 +109,6 @@ func (m *Match) run() {
 		case <-ticker.C:
 			log.Println("match.run: ticker.C")
 			nextStep := m.cardGame.nextStep()
-			ticker.Stop()
 			process(nextStep)
 		case action := <-m.chPlayerTurn:
 			log.Println("match.run: chPlayerTurn")

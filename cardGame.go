@@ -15,7 +15,7 @@ type CardTransition struct {
 	Card         Card    `json:"card"`
 	FromGroupId  string  `json:"from_group_id"`
 	ToGroupId    string  `json:"to_group_id"`
-	ToIdx        int     `json:"to_idx"`
+	ToTop        bool    `json:"to_top"`
 	WaitDuration float32 `json:"wait_duration"`
 	Duration     float32 `json:"duration"`
 }
@@ -44,7 +44,6 @@ type CardGame interface {
 type CardGroup struct {
 	ID         string `json:"id"`
 	Cards      []Card `json:"cards"`
-	Capacity   int    `json:"capacity"`
 	Visibility int    `json:"visibility"` // 0 = hidden, 1 = shown to local player only, 2 = visible
 }
 

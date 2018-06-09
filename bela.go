@@ -17,31 +17,38 @@ const (
 type BelaGame struct {
 	State               int          `json:"state"`
 	InitialGroup        *CardGroup   `json:"initial_group"`
-	CenterGroup         *CardGroup   `json:"center_group"`
+	CenterGroups        []*CardGroup `json:"center_groups"`
 	HandGroups          []*CardGroup `json:"hand_groups"`
 	TalonGroups         []*CardGroup `json:"talon_groups"`
 	WinGroups           []*CardGroup `json:"win_groups"`
+	IdxPlayerDealed     int          `json:"idx_player_dealed"`
 	IdxPlayerOnTurn     int          `json:"idx_player_on_turn"`
 	IdxPlayerStartRound int          `json:"idx_player_start_round"`
 	IdxPlayerCalled     *int         `json:"idx_player_called"`
+	Adut                *string      `json:"adut"`
 }
 
 func (bela *BelaGame) run() CardGameStep {
 	bela.InitialGroup = &CardGroup{ID: "Initial"}
-	bela.CenterGroup = &CardGroup{ID: "Center", Capacity: 4, Visibility: 2}
 	bela.HandGroups = []*CardGroup{
-		&CardGroup{ID: "Hand0", Capacity: 8, Visibility: 1},
-		&CardGroup{ID: "Hand1", Capacity: 8, Visibility: 1},
-		&CardGroup{ID: "Hand2", Capacity: 8, Visibility: 1},
-		&CardGroup{ID: "Hand3", Capacity: 8, Visibility: 1}}
+		&CardGroup{ID: "Hand0", Visibility: 1},
+		&CardGroup{ID: "Hand1", Visibility: 1},
+		&CardGroup{ID: "Hand2", Visibility: 1},
+		&CardGroup{ID: "Hand3", Visibility: 1}}
 	bela.TalonGroups = []*CardGroup{
-		&CardGroup{ID: "Talon0", Capacity: 2},
-		&CardGroup{ID: "Talon1", Capacity: 2},
-		&CardGroup{ID: "Talon2", Capacity: 2},
-		&CardGroup{ID: "Talon3", Capacity: 2}}
+		&CardGroup{ID: "Talon0"},
+		&CardGroup{ID: "Talon1"},
+		&CardGroup{ID: "Talon2"},
+		&CardGroup{ID: "Talon3"}}
 	bela.WinGroups = []*CardGroup{
 		&CardGroup{ID: "Win0"},
 		&CardGroup{ID: "Win1"},
+	}
+	bela.CenterGroups = []*CardGroup{
+		&CardGroup{ID: "Center0", Visibility: 2},
+		&CardGroup{ID: "Center1", Visibility: 2},
+		&CardGroup{ID: "Center2", Visibility: 2},
+		&CardGroup{ID: "Center3", Visibility: 2},
 	}
 
 	cards := []Card{}
@@ -119,7 +126,7 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 		panic(err)
 	}
 	step := CardGameStep{
-		WaitDuration: 1,
+		WaitDuration: 1 * time.Second,
 	}
 	if dic.Move != nil {
 		if dic.Move.ToGroupId != nil {
@@ -130,13 +137,14 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 				Card:         dic.Move.Card,
 				FromGroupId:  dic.Move.FromGroupId,
 				ToGroupId:    *dic.Move.ToGroupId,
-				ToIdx:        len(toGroup.Cards) - 1,
+				ToTop:        true,
 				WaitDuration: 0,
 				Duration:     0.5,
 			})
 		}
 		if bela.State == BelaStateCall {
 			bela.IdxPlayerCalled = &bela.IdxPlayerOnTurn
+			bela.Adut = &dic.Move.Card.Boja
 		}
 	}
 	return step
@@ -148,13 +156,12 @@ func (bela *BelaGame) dealStep() CardGameStep {
 	for idxGroup, group := range bela.HandGroups {
 		for i := 0; i < 6; i++ {
 			fromIdx := len(bela.InitialGroup.Cards) - 1
-			toIdx := len(group.Cards)
 			card := bela.InitialGroup.Cards[fromIdx]
 			step.Transitions = append(step.Transitions, CardTransition{
 				Card:         card,
 				FromGroupId:  bela.InitialGroup.ID,
 				ToGroupId:    group.ID,
-				ToIdx:        toIdx,
+				ToTop:        true,
 				WaitDuration: 0.2*float32(i) + 1.2*float32(idxGroup),
 				Duration:     0.5,
 			})
@@ -164,13 +171,12 @@ func (bela *BelaGame) dealStep() CardGameStep {
 	for idxGroup, group := range bela.TalonGroups {
 		for i := 0; i < 2; i++ {
 			fromIdx := len(bela.InitialGroup.Cards) - 1
-			toIdx := len(group.Cards)
 			card := bela.InitialGroup.Cards[fromIdx]
 			step.Transitions = append(step.Transitions, CardTransition{
 				Card:         card,
 				FromGroupId:  bela.InitialGroup.ID,
 				ToGroupId:    group.ID,
-				ToIdx:        toIdx,
+				ToTop:        true,
 				WaitDuration: 5 + 0.2*float32(i) + 1.2*float32(idxGroup),
 				Duration:     0.5,
 			})
@@ -205,13 +211,12 @@ func (bela *BelaGame) pickTalonStep() CardGameStep {
 		for i := 0; i < 2; i++ {
 			handGroup := bela.HandGroups[idxGroup]
 			fromIdx := len(group.Cards) - 1
-			toIdx := len(handGroup.Cards)
 			card := group.Cards[fromIdx]
 			step.Transitions = append(step.Transitions, CardTransition{
 				Card:         card,
 				FromGroupId:  group.ID,
 				ToGroupId:    handGroup.ID,
-				ToIdx:        toIdx,
+				ToTop:        true,
 				WaitDuration: 0.2*float32(i) + 1.2*float32(idxGroup),
 				Duration:     0.5,
 			})
@@ -223,13 +228,129 @@ func (bela *BelaGame) pickTalonStep() CardGameStep {
 	return step
 }
 
+func (bela *BelaGame) cardStrength(card Card) int {
+	if card.Boja == *bela.Adut {
+		switch card.Broj {
+		case 7:
+			return 15
+		case 8:
+			return 16
+		case 9:
+			return 21
+		case 10:
+			return 19
+		case 11:
+			return 22
+		case 12:
+			return 17
+		case 13:
+			return 18
+		case 14:
+			return 20
+		}
+	}
+	return card.Broj
+}
+
 func (bela *BelaGame) playStep() CardGameStep {
 	enabledMoves := []CardEnabledMove{}
 	fromGroup := bela.HandGroups[bela.IdxPlayerOnTurn]
+	toGroup := bela.CenterGroups[bela.IdxPlayerOnTurn]
 	log.Println(fromGroup.Cards)
-	for _, card := range fromGroup.Cards {
-		enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &bela.CenterGroup.ID})
+	centerCards := []Card{}
+	for i := 0; i < 4; i++ {
+		group := bela.CenterGroups[(bela.IdxPlayerStartRound+i)%4]
+		centerCards = append(centerCards, group.Cards...)
 	}
+
+	// ako su sve karte pale
+	if len(centerCards) == 4 {
+		log.Println("sve 4 karte su pale")
+		step := CardGameStep{}
+		toGroup = bela.WinGroups[0]
+		for _, group := range bela.CenterGroups {
+			for _, card := range group.Cards {
+				step.Transitions = append(step.Transitions, CardTransition{
+					Card:         card,
+					FromGroupId:  group.ID,
+					ToGroupId:    toGroup.ID,
+					ToTop:        true,
+					WaitDuration: 0,
+					Duration:     0.5,
+				})
+				bela.moveCard(card, group, toGroup)
+			}
+		}
+		step.WaitDuration = 1 * time.Second
+		return step
+	}
+
+	// ako je već karta u centru
+	if len(centerCards) > 0 {
+		cardFirstInCenter := centerCards[0]
+		strongestInCenter := cardFirstInCenter
+		presjeceno := false
+		for _, card := range centerCards[1:] {
+			if bela.cardStrength(card) > bela.cardStrength(strongestInCenter) {
+				if card.Boja == *bela.Adut {
+					if *bela.Adut != cardFirstInCenter.Boja {
+						presjeceno = true
+					}
+				}
+				strongestInCenter = card
+			}
+		}
+
+		if presjeceno {
+			// moraš poštivati boju, ne treba jača
+			if len(enabledMoves) == 0 {
+				for _, card := range fromGroup.Cards {
+					if card.Boja == cardFirstInCenter.Boja {
+						enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+					}
+				}
+			}
+			// ako nema u istoj boji, moraš aduta
+			if len(enabledMoves) == 0 {
+				for _, card := range fromGroup.Cards {
+					if card.Boja == *bela.Adut {
+						enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+					}
+				}
+			}
+		} else {
+			// u istoj boji moraš jaču odigrati
+			for _, card := range fromGroup.Cards {
+				if card.Boja == cardFirstInCenter.Boja && bela.cardStrength(card) > bela.cardStrength(strongestInCenter) {
+					enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+				}
+			}
+			// ako nema jaču u istoj boji, probaj slabiju u istoj boji
+			if len(enabledMoves) == 0 {
+				for _, card := range fromGroup.Cards {
+					if card.Boja == cardFirstInCenter.Boja {
+						enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+					}
+				}
+			}
+			// ako nema u istoj boji, moraš aduta
+			if len(enabledMoves) == 0 {
+				for _, card := range fromGroup.Cards {
+					if card.Boja == *bela.Adut {
+						enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+					}
+				}
+			}
+		}
+	}
+
+	// ako nemaš još ništa od navedenog, baci bilo šta
+	if len(enabledMoves) == 0 {
+		for _, card := range fromGroup.Cards {
+			enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
+		}
+	}
+
 	m := map[int][]CardEnabledMove{bela.IdxPlayerOnTurn: enabledMoves}
 	log.Println("enabledMoves:", m)
 	bela.State = BelaStatePlay
@@ -240,16 +361,11 @@ func (bela *BelaGame) playStep() CardGameStep {
 }
 
 func (bela *BelaGame) groups() []*CardGroup {
-	result := []*CardGroup{bela.InitialGroup, bela.CenterGroup}
-	for _, group := range bela.HandGroups {
-		result = append(result, group)
-	}
-	for _, group := range bela.TalonGroups {
-		result = append(result, group)
-	}
-	for _, group := range bela.WinGroups {
-		result = append(result, group)
-	}
+	result := []*CardGroup{bela.InitialGroup}
+	result = append(result, bela.HandGroups...)
+	result = append(result, bela.CenterGroups...)
+	result = append(result, bela.TalonGroups...)
+	result = append(result, bela.WinGroups...)
 	return result
 }
 

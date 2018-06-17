@@ -1,10 +1,15 @@
 package main
 
 type LorumGame struct {
+	State int
 }
 
 func (lorum *LorumGame) run() CardGameStep {
 	return CardGameStep{}
+}
+
+func (lorum *LorumGame) state() int {
+	return lorum.State
 }
 
 func (lorum *LorumGame) groups() []*CardGroup {

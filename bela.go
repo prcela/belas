@@ -28,6 +28,10 @@ type BelaGame struct {
 	Adut                *string      `json:"adut"`
 }
 
+func (bela *BelaGame) state() int {
+	return bela.State
+}
+
 func (bela *BelaGame) run() CardGameStep {
 	bela.InitialGroup = &CardGroup{ID: "Initial"}
 	bela.HandGroups = []*CardGroup{
@@ -103,13 +107,11 @@ func (bela *BelaGame) nextStep() CardGameStep {
 			bela.IdxPlayerOnTurn = bela.IdxPlayerStartRound
 			return bela.pickTalonStep()
 		} else {
-			bela.nextPlayer()
 			return bela.callStep()
 		}
 	case BelaStatePickedTalon:
 		return bela.playStep()
 	case BelaStatePlay:
-		bela.nextPlayer()
 		return bela.playStep()
 	}
 
@@ -146,6 +148,7 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 			bela.IdxPlayerCalled = &bela.IdxPlayerOnTurn
 			bela.Adut = &dic.Move.Card.Boja
 		}
+		bela.nextPlayer()
 	}
 	return step
 }
@@ -253,10 +256,7 @@ func (bela *BelaGame) cardStrength(card Card) int {
 }
 
 func (bela *BelaGame) playStep() CardGameStep {
-	enabledMoves := []CardEnabledMove{}
-	fromGroup := bela.HandGroups[bela.IdxPlayerOnTurn]
-	toGroup := bela.CenterGroups[bela.IdxPlayerOnTurn]
-	log.Println(fromGroup.Cards)
+
 	centerCards := []Card{}
 	for i := 0; i < 4; i++ {
 		group := bela.CenterGroups[(bela.IdxPlayerStartRound+i)%4]
@@ -267,7 +267,7 @@ func (bela *BelaGame) playStep() CardGameStep {
 	if len(centerCards) == 4 {
 		log.Println("sve 4 karte su pale")
 		step := CardGameStep{}
-		toGroup = bela.WinGroups[0]
+		toGroup := bela.WinGroups[0]
 		for _, group := range bela.CenterGroups {
 			for _, card := range group.Cards {
 				step.Transitions = append(step.Transitions, CardTransition{
@@ -284,6 +284,11 @@ func (bela *BelaGame) playStep() CardGameStep {
 		step.WaitDuration = 1 * time.Second
 		return step
 	}
+
+	enabledMoves := []CardEnabledMove{}
+	fromGroup := bela.HandGroups[bela.IdxPlayerOnTurn]
+	toGroup := bela.CenterGroups[bela.IdxPlayerOnTurn]
+	log.Println(fromGroup.Cards)
 
 	// ako je već karta u centru
 	if len(centerCards) > 0 {

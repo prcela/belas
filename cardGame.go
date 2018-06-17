@@ -35,6 +35,7 @@ type CardGameStep struct {
 
 type CardGame interface {
 	run() CardGameStep
+	state() int
 	nextStep() CardGameStep
 	onPlayerAction(action *Action) CardGameStep
 	groups() []*CardGroup
@@ -48,7 +49,9 @@ type CardGroup struct {
 }
 
 func (group *CardGroup) shuffle() {
-	perm := rand.Perm(len(group.Cards))
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	perm := r1.Perm(len(group.Cards))
 	dest := make([]Card, len(group.Cards))
 	copy(dest, group.Cards)
 	log.Println("len(group.Cards)=", len(group.Cards))

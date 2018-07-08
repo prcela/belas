@@ -77,21 +77,20 @@ func (room *Room) run() {
 			room.mu.Lock()
 			room.clients[client] = true
 			room.mu.Unlock()
+			room.onClientRegistered(client)
 
 		case client := <-room.chUnregisterClient:
 			log.Println("room.unregisterClient")
 			room.mu.Lock()
 			if _, ok := room.clients[client]; ok {
 				// remove player if it is not for table
-				if client.playerID != nil {
-					if player := room.players[*client.playerID]; player != nil {
-						log.Printf("unregister client: player: %v, tableID: %v", player.Alias, player.TableID)
-						if !player.waitingForClient {
-							if player.TableID != nil {
-								go player.waitForClientConnection(room, 30*time.Second)
-							} else {
-								go player.waitForClientConnection(room, 5*time.Second)
-							}
+				if player := room.players[client.playerID]; player != nil {
+					log.Printf("unregister client: player: %v, tableID: %v", player.Alias, player.TableID)
+					if !player.waitingForClient {
+						if player.TableID != nil {
+							go player.waitForClientConnection(room, 30*time.Second)
+						} else {
+							go player.waitForClientConnection(room, 5*time.Second)
 						}
 					}
 				}
@@ -102,7 +101,7 @@ func (room *Room) run() {
 
 		case client := <-room.chWaitClient:
 
-			if player := room.players[*client.playerID]; player != nil {
+			if player := room.players[client.playerID]; player != nil {
 				go func() {
 					if player.waitingForClient {
 						player.chWaitClient <- client
@@ -203,20 +202,18 @@ func (room *Room) run() {
 				if player := room.players[playerID]; player != nil {
 					foundClient := false
 					for client := range room.clients {
-						if client.playerID != nil {
-							if playerID == *client.playerID {
-								foundClient = true
-								select {
-								case client.send <- broadcast.message:
-								default:
-									if broadcast.msgNum != 0 {
-										color.Yellow("append missed message")
-										player.missedMessages = append(player.missedMessages, MissedMessage{message: broadcast.message, msgNum: broadcast.msgNum})
-									}
-									go func(c *Client) {
-										room.chUnregisterClient <- client
-									}(client)
+						if playerID == client.playerID {
+							foundClient = true
+							select {
+							case client.send <- broadcast.message:
+							default:
+								if broadcast.msgNum != 0 {
+									color.Yellow("append missed message")
+									player.missedMessages = append(player.missedMessages, MissedMessage{message: broadcast.message, msgNum: broadcast.msgNum})
 								}
+								go func(c *Client) {
+									room.chUnregisterClient <- client
+								}(client)
 							}
 						}
 					}
@@ -356,46 +353,36 @@ func (room *Room) ackAction(action *Action) {
 	room.mu.Unlock()
 }
 
-func (room *Room) playerStatAction(action *Action) {
-
+func (room *Room) onClientRegistered(c *Client) {
 	db, s := room.GetDatabaseSessionCopy()
 	defer s.Close()
 
-	playerID := action.fromPlayerID
-
-	log.Println("playerId: ", playerID)
-
-	player := room.getPlayer(playerID)
+	player := room.getPlayer(c.playerID)
 
 	foundInRoom := player != nil
 
 	if foundInRoom {
-		log.Println("found player in room", playerID)
+		// player already exists and we were waiting for this client
+		log.Println("found player in room", player.ID)
 		log.Println("wait channel: ", player.chWaitClient)
-		// if still waiting for client
-		for c := range room.clients {
-			if c.playerID != nil && *c.playerID == playerID {
-				go func(c *Client) {
-					color.Cyan("room.waitClient <- c")
-					room.chWaitClient <- c
-				}(c)
-				break
-			}
-		}
 
+		go func(c *Client) {
+			color.Cyan("room.waitClient <- c")
+			room.chWaitClient <- c
+		}(c)
 	} else {
 		log.Println("Not found player in room")
-		err := db.C("players").FindId(playerID).One(&player)
+		err := db.C("players").FindId(c.playerID).One(&player)
 		if err == nil {
 			player.room = room
 			player.missedMessages = []MissedMessage{}
 			player.chWaitClient = make(chan *Client)
 			player.toAck = make(map[int32]bool)
 		} else {
-			log.Printf("Not found player %v in database\n", playerID)
+			log.Printf("Not found player %v in database\n", c.playerID)
 			log.Println(err)
-			log.Println("New player:", playerID)
-			player = newPlayer(room, playerID)
+			log.Println("New player:", c.playerID)
+			player = newPlayer(room, c.playerID)
 			db.C("players").Insert(player)
 		}
 
@@ -404,13 +391,8 @@ func (room *Room) playerStatAction(action *Action) {
 		room.mu.Unlock()
 	}
 
-	var stat struct {
-		LastN *int `json:"last_n,omitempty"`
-	}
-	if err := json.Unmarshal(action.message, &stat); err != nil {
-		panic(err)
-	}
-	playerStatItems := room.statItems(playerID, stat.LastN)
+	ctStatItems := 10
+	playerStatItems := room.statItems(player.ID, &ctStatItems)
 
 	js, err := json.Marshal(struct {
 		MsgFunc     string     `json:"msg_func"`
@@ -429,12 +411,49 @@ func (room *Room) playerStatAction(action *Action) {
 	}
 
 	room.chBroadcast <- Broadcast{
-		playersID: []string{playerID},
+		playersID: []string{player.ID},
 		message:   js,
 	}
 
 	if !foundInRoom {
 		room.chBroadcastAll <- room.info()
+	}
+}
+
+func (room *Room) playerStatAction(action *Action) {
+
+	playerID := action.fromPlayerID
+	player := room.getPlayer(playerID)
+
+	log.Println("playerId: ", playerID)
+
+	var stat struct {
+		LastN *int `json:"last_n,omitempty"`
+	}
+	if err := json.Unmarshal(action.message, &stat); err != nil {
+		panic(err)
+	}
+	playerStatItems := room.statItems(playerID, stat.LastN)
+
+	js, err := json.Marshal(struct {
+		MsgFunc     string     `json:"msg_func"`
+		Player      *Player    `json:"player"`
+		StatItems   []StatItem `json:"stat_items"`
+		FoundInRoom bool       `json:"found_in_room"`
+	}{
+		MsgFunc:     "player_stat",
+		Player:      player,
+		StatItems:   playerStatItems,
+		FoundInRoom: true,
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	room.chBroadcast <- Broadcast{
+		playersID: []string{playerID},
+		message:   js,
 	}
 
 }

@@ -26,10 +26,18 @@ type CardEnabledMove struct {
 	ToGroupId   *string `json:"to_group_id"`
 }
 
+type CardGameEvent struct {
+	Category string `json:"category"`
+	Action   string `json:"action"`
+	Label    string `json:"label"`
+	Value    int    `json:"value"`
+}
+
 type CardGameStep struct {
 	WaitDuration     time.Duration
 	Transitions      []CardTransition
 	EnabledMoves     map[int][]CardEnabledMove
+	CardGameEvent    *CardGameEvent
 	SendCompleteGame bool
 }
 

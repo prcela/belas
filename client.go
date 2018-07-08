@@ -42,7 +42,7 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	playerID *string
+	playerID string
 	room     *Room
 	conn     *websocket.Conn
 	send     chan []byte
@@ -82,47 +82,45 @@ func (c *Client) processMessage(message []byte) {
 	}
 	log.Println(dic)
 
-	if c.playerID != nil {
-		if dic["msg_num"] == nil {
-			dic["msg_num"] = float64(newMsgNum())
-		} else {
-			log.Println("msg_num is not nil")
-		}
+	if dic["msg_num"] == nil {
+		dic["msg_num"] = float64(newMsgNum())
+	} else {
+		log.Println("msg_num is not nil")
+	}
 
-		color.Magenta("%v", dic)
+	color.Magenta("%v", dic)
 
-		js, err := json.Marshal(dic)
-		if err != nil {
-			panic(err)
-		}
+	js, err := json.Marshal(dic)
+	if err != nil {
+		panic(err)
+	}
 
-		action := &Action{
-			name:         dic["msg_func"].(string),
-			message:      js,
-			fromPlayerID: *c.playerID,
-			msgNum:       int32(dic["msg_num"].(float64)),
-		}
-		log.Println("Client action:", action.name)
-		p := c.room.getPlayer(action.fromPlayerID)
-		if p == nil {
-			log.Println("client: from player is nil!")
-			return
-		}
+	action := &Action{
+		name:         dic["msg_func"].(string),
+		message:      js,
+		fromPlayerID: c.playerID,
+		msgNum:       int32(dic["msg_num"].(float64)),
+	}
+	log.Println("Client action:", action.name)
+	p := c.room.getPlayer(action.fromPlayerID)
+	if p == nil {
+		log.Println("client: from player is nil!")
+		return
+	}
 
-		switch action.name {
-		case "ack":
+	switch action.name {
+	case "ack":
+		c.room.chAction <- action
+
+	case "ignore_invitation", "create_table", "join_table":
+		if p.TableID == nil {
 			c.room.chAction <- action
+		}
 
-		case "ignore_invitation", "create_table", "join_table":
-			if p.TableID == nil {
-				c.room.chAction <- action
-			}
-
-		case "leave_table", "invite_player", "text_message", "turn", "end_match", "rematch":
-			if p.TableID != nil {
-				log.Println("c.room.action <- action")
-				c.room.chAction <- action
-			}
+	case "leave_table", "invite_player", "text_message", "turn", "end_match", "rematch":
+		if p.TableID != nil {
+			log.Println("c.room.action <- action")
+			c.room.chAction <- action
 		}
 	}
 
@@ -131,20 +129,16 @@ func (c *Client) processMessage(message []byte) {
 	case "player_stat":
 
 		var stat struct {
-			PlayerID string `json:"playerId"`
-			LastN    *int   `json:"last_n,omitempty"`
+			LastN *int `json:"last_n,omitempty"`
 		}
 		if err := json.Unmarshal(message, &stat); err != nil {
 			panic(err)
 		}
-		c.room.mu.Lock()
-		c.playerID = &stat.PlayerID
-		c.room.mu.Unlock()
 
 		action := &Action{
 			name:         "player_stat",
 			message:      message,
-			fromPlayerID: stat.PlayerID,
+			fromPlayerID: c.playerID,
 		}
 		c.room.chAction <- action
 
@@ -235,7 +229,9 @@ func serveWs(room *Room, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{room: room, conn: conn, send: make(chan []byte, 256)}
+	var cookie, _ = r.Cookie("playerId")
+
+	client := &Client{room: room, conn: conn, playerID: cookie.Value, send: make(chan []byte, 256)}
 	log.Println("Created client")
 
 	client.room.chRegisterClient <- client

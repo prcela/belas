@@ -56,7 +56,7 @@ func (bela *BelaGame) run() CardGameStep {
 	}
 
 	cards := []Card{}
-	for _, boja := range []string{"žir", "bundeva", "list", "srce"} {
+	for _, boja := range []string{"zir", "bundeva", "list", "srce"} {
 		for _, broj := range []int{7, 8, 9, 10, 11, 12, 13, 14} {
 			cards = append(cards, Card{Boja: boja, Broj: broj})
 		}
@@ -147,6 +147,13 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 		if bela.State == BelaStateCall {
 			bela.IdxPlayerCalled = &bela.IdxPlayerOnTurn
 			bela.Adut = &dic.Move.Card.Boja
+			step.CardGameEvent = &CardGameEvent{
+				Category: "Player",
+				Action:   "Call",
+				Label:    *bela.Adut,
+				Value:    *bela.IdxPlayerCalled,
+			}
+			log.Println(step)
 		}
 		bela.nextPlayer()
 	}

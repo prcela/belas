@@ -86,8 +86,8 @@ func (table *Table) joinAction(action *Action) {
 		log.Println(err)
 	}
 
-	log.Println("Broadcasting join_table message")
-	table.room.chBroadcast <- Broadcast{playersID: table.PlayersID, message: js}
+	log.Println("Broadcasting join_table message to all") // better than sending room info to all
+	table.room.chBroadcastAll <- js
 
 	if table.isFull() {
 		m := newMatch(table)

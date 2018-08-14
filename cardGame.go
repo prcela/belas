@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+const (
+	CardVisibilityHidden  = 0
+	CardVisibilityLocal   = 1
+	CardVisibilityVisible = 2
+)
+
 type Card struct {
 	Boja string `json:"boja"`
 	Broj int    `json:"broj"`

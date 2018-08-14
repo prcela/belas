@@ -35,10 +35,10 @@ func (bela *BelaGame) state() int {
 func (bela *BelaGame) run() CardGameStep {
 	bela.InitialGroup = &CardGroup{ID: "Initial"}
 	bela.HandGroups = []*CardGroup{
-		&CardGroup{ID: "Hand0", Visibility: 1},
-		&CardGroup{ID: "Hand1", Visibility: 1},
-		&CardGroup{ID: "Hand2", Visibility: 1},
-		&CardGroup{ID: "Hand3", Visibility: 1}}
+		&CardGroup{ID: "Hand0", Visibility: CardVisibilityLocal},
+		&CardGroup{ID: "Hand1", Visibility: CardVisibilityLocal},
+		&CardGroup{ID: "Hand2", Visibility: CardVisibilityLocal},
+		&CardGroup{ID: "Hand3", Visibility: CardVisibilityLocal}}
 	bela.TalonGroups = []*CardGroup{
 		&CardGroup{ID: "Talon0"},
 		&CardGroup{ID: "Talon1"},
@@ -49,15 +49,15 @@ func (bela *BelaGame) run() CardGameStep {
 		&CardGroup{ID: "Win1"},
 	}
 	bela.CenterGroups = []*CardGroup{
-		&CardGroup{ID: "Center0", Visibility: 2},
-		&CardGroup{ID: "Center1", Visibility: 2},
-		&CardGroup{ID: "Center2", Visibility: 2},
-		&CardGroup{ID: "Center3", Visibility: 2},
+		&CardGroup{ID: "Center0", Visibility: CardVisibilityVisible},
+		&CardGroup{ID: "Center1", Visibility: CardVisibilityVisible},
+		&CardGroup{ID: "Center2", Visibility: CardVisibilityVisible},
+		&CardGroup{ID: "Center3", Visibility: CardVisibilityVisible},
 	}
 
 	cards := []Card{}
 	for _, boja := range []string{"zir", "bundeva", "list", "srce"} {
-		for _, broj := range []int{7, 8, 9, 10, 11, 12, 13, 14} {
+		for _, broj := range []int{1, 7, 8, 9, 10, 11, 12, 13} {
 			cards = append(cards, Card{Boja: boja, Broj: broj})
 		}
 	}
@@ -241,6 +241,8 @@ func (bela *BelaGame) pickTalonStep() CardGameStep {
 func (bela *BelaGame) cardStrength(card Card) int {
 	if card.Boja == *bela.Adut {
 		switch card.Broj {
+		case 1:
+			return 20
 		case 7:
 			return 15
 		case 8:
@@ -255,11 +257,42 @@ func (bela *BelaGame) cardStrength(card Card) int {
 			return 17
 		case 13:
 			return 18
-		case 14:
-			return 20
 		}
 	}
+	switch card.Broj {
+	case 1:
+		return 11
+	case 7:
+		return 1
+	case 8:
+		return 2
+	case 9:
+		return 3
+	case 10:
+		return 10
+	case 11:
+		return 4
+	case 12:
+		return 5
+	case 13:
+		return 6
+	}
 	return card.Broj
+}
+
+func (bela *BelaGame) strongestInCenter(centerCards []Card) (idx int, card Card) {
+	firstCard := centerCards[0]
+	strongestIdx := 0
+	strongestCard := firstCard
+	for idx, card := range centerCards {
+		if card.Boja == firstCard.Boja || card.Boja == *bela.Adut {
+			if bela.cardStrength(card) > bela.cardStrength(strongestCard) {
+				strongestCard = card
+				strongestIdx = idx
+			}
+		}
+	}
+	return strongestIdx, strongestCard
 }
 
 func (bela *BelaGame) playStep() CardGameStep {
@@ -273,8 +306,10 @@ func (bela *BelaGame) playStep() CardGameStep {
 	// ako su sve karte pale
 	if len(centerCards) == 4 {
 		log.Println("sve 4 karte su pale")
+		strongestIdx, _ := bela.strongestInCenter(centerCards)
+
 		step := CardGameStep{}
-		toGroup := bela.WinGroups[0]
+		toGroup := bela.WinGroups[(bela.IdxPlayerStartRound+strongestIdx)%2]
 		for _, group := range bela.CenterGroups {
 			for _, card := range group.Cards {
 				step.Transitions = append(step.Transitions, CardTransition{
@@ -299,17 +334,12 @@ func (bela *BelaGame) playStep() CardGameStep {
 
 	// ako je već karta u centru
 	if len(centerCards) > 0 {
+		_, strongestCard := bela.strongestInCenter(centerCards)
 		cardFirstInCenter := centerCards[0]
-		strongestInCenter := cardFirstInCenter
 		presjeceno := false
 		for _, card := range centerCards[1:] {
-			if bela.cardStrength(card) > bela.cardStrength(strongestInCenter) {
-				if card.Boja == *bela.Adut {
-					if *bela.Adut != cardFirstInCenter.Boja {
-						presjeceno = true
-					}
-				}
-				strongestInCenter = card
+			if card.Boja == *bela.Adut && *bela.Adut != cardFirstInCenter.Boja {
+				presjeceno = true
 			}
 		}
 
@@ -333,7 +363,7 @@ func (bela *BelaGame) playStep() CardGameStep {
 		} else {
 			// u istoj boji moraš jaču odigrati
 			for _, card := range fromGroup.Cards {
-				if card.Boja == cardFirstInCenter.Boja && bela.cardStrength(card) > bela.cardStrength(strongestInCenter) {
+				if card.Boja == cardFirstInCenter.Boja && bela.cardStrength(card) > bela.cardStrength(strongestCard) {
 					enabledMoves = append(enabledMoves, CardEnabledMove{FromGroupId: fromGroup.ID, Card: card, ToGroupId: &toGroup.ID})
 				}
 			}

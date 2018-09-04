@@ -41,9 +41,9 @@ type CardGameEvent struct {
 
 type CardGameStep struct {
 	WaitDuration     time.Duration
-	Transitions      []CardTransition
-	EnabledMoves     map[int][]CardEnabledMove
-	CardGameEvent    *CardGameEvent
+	Transitions      []CardTransition          `json:"transitions"`
+	EnabledMoves     map[int][]CardEnabledMove `json:"enabled_moves"`
+	CardGameEvent    *CardGameEvent            `json:"event,omitempty"`
 	SendCompleteGame bool
 }
 

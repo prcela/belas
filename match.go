@@ -81,19 +81,15 @@ func (m *Match) run() {
 
 		msgNum := newMsgNum()
 		js, err := json.Marshal(struct {
-			MsgFunc         string                    `json:"msg_func"`
-			State           int                       `json:"state"`
-			CardTransitions []CardTransition          `json:"transitions"`
-			EnabledMoves    map[int][]CardEnabledMove `json:"enabled_moves"`
-			Event           *CardGameEvent            `json:"event,omitempty"`
-			MsgNum          int32                     `json:"msg_num"`
+			MsgFunc string       `json:"msg_func"`
+			State   int          `json:"state"`
+			Step    CardGameStep `json:"step"`
+			MsgNum  int32        `json:"msg_num"`
 		}{
-			MsgFunc:         "step",
-			State:           m.cardGame.state(),
-			CardTransitions: nextStep.Transitions,
-			EnabledMoves:    nextStep.EnabledMoves,
-			Event:           nextStep.CardGameEvent,
-			MsgNum:          msgNum,
+			MsgFunc: "step",
+			State:   m.cardGame.state(),
+			Step:    nextStep,
+			MsgNum:  msgNum,
 		})
 
 		if err != nil {

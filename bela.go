@@ -26,6 +26,7 @@ type BelaGame struct {
 	IdxPlayerStartRound int          `json:"idx_player_start_round"`
 	IdxPlayerCalled     *int         `json:"idx_player_called"`
 	Adut                *string      `json:"adut"`
+	Scores              []int        `json:"scores"`
 }
 
 func (bela *BelaGame) state() int {
@@ -66,6 +67,7 @@ func (bela *BelaGame) run() CardGameStep {
 	bela.InitialGroup.shuffle()
 	bela.IdxPlayerOnTurn = 0
 	bela.State = BelaStateInit
+	bela.Scores = []int{0, 0}
 
 	return CardGameStep{
 		WaitDuration:     time.Second,
@@ -155,7 +157,6 @@ func (bela *BelaGame) onPlayerAction(action *Action) CardGameStep {
 			}
 			log.Println(step)
 		}
-		bela.nextPlayer()
 	}
 	return step
 }
@@ -324,6 +325,13 @@ func (bela *BelaGame) playStep() CardGameStep {
 			}
 		}
 		step.WaitDuration = 1 * time.Second
+		step.CardGameEvent = &CardGameEvent{
+			Category: "Game",
+			Action:   "ChangedIdxPlayerOnTurn",
+			Label:    "",
+			Value:    strongestIdx,
+		}
+		bela.IdxPlayerOnTurn = strongestIdx
 		return step
 	}
 
@@ -396,6 +404,7 @@ func (bela *BelaGame) playStep() CardGameStep {
 	m := map[int][]CardEnabledMove{bela.IdxPlayerOnTurn: enabledMoves}
 	log.Println("enabledMoves:", m)
 	bela.State = BelaStatePlay
+	bela.nextPlayer()
 	return CardGameStep{
 		EnabledMoves: m,
 		WaitDuration: 60 * time.Second,

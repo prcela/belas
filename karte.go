@@ -30,6 +30,15 @@ func main() {
 	roomBela := newRoom("bela")
 	go roomBela.run()
 
+	var fsPath string
+	if runtime.GOOS == "darwin" {
+		fsPath = "static"
+	} else {
+		fsPath = "/home/prcela/go/src/github.com/prcela/karte/static"
+	}
+	fs := http.FileServer(http.Dir(fsPath))
+	http.Handle("/static/", http.StripPrefix("/static", fs))
+
 	http.HandleFunc("/bela", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("request", r)
 		serveWs(roomBela, w, r)

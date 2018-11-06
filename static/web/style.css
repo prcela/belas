@@ -4,11 +4,24 @@ html, body {
 	font-family: 'Krub', sans-serif;
 }
 
-.c {
+/* For mobile phones */
+[class*="c"] {
 	position: fixed;
-    /* center the element */
-    width: 620px;
-    top: 120px;
-    left: 50%;
-    margin: 0 -310px
+	width: 300px;
+	left: 50%;
+	margin: 0 -150px;
 }
+
+@media only screen and (min-width: 768px) {
+	.c {
+		position: fixed;
+	    width: 620px;
+	    top: 120px;
+	    left: 50%;
+	    margin: 0 -310px
+	}
+}
+
+
+
+	

@@ -26,6 +26,19 @@ html, body {
 	}
 }
 
+.TableSection {
+	position: relative;
+	background-color: #d0d0d0;
+	border: none;
+}
+
+.Player {
+	height: 30px;
+	line-height: 30px;
+    border-bottom: 1px solid black;
+    vertical-align: center;
+}
+
 
 
 	

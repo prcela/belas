@@ -1,8 +1,13 @@
 class Room {
-  constructor() {
+  constructor(node) {
+  	this.node = node
+  	document.roomInfoListeners.push(this)
   	wsAPI.roomInfo()
   }
-  show(node) {
-  	node.innerHTML = "room"
+  show() {
+  	this.node.innerHTML = "room"
+  }
+  onRoomInfo(e) {
+  	console.log("onRoomInfo event received")
   }
 }

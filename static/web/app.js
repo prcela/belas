@@ -9,8 +9,8 @@ class App {
     this.onMenuItemClicked = function(item) {
       console.log("klik ",item)
       if (item == "Multiplayer") {
-        var room = new Room()
-        room.show(this.node)
+        var room = new Room(this.node)
+        room.show()
       }
     }
   }
@@ -26,4 +26,11 @@ app.show()
 setCookie("playerId","test1234",1)
 var wsAPI = new WsAPI(new WebSocket("ws://localhost:3000/chat", [] ));
 
+document.roomInfoListeners = []
+document.addEventListener('onRoomInfo', function(e) {
+  for (var i = document.roomInfoListeners.length - 1; i >= 0; i--) {
+      document.roomInfoListeners[i].onRoomInfo(e)
+    }
+  console.log("ok")
+})
 

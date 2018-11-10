@@ -1,9 +1,17 @@
+var AppState = {menu:1, sp:2, mp:3, leaderboard:4}
+Object.freeze(AppState)
+
 class App {
   constructor(node) {
+    this.state = AppState.menu
     this.node = node
     this.menu = new Menu(["Single player","Multiplayer","Leaderboard","Rules","About"])
-    this.onMenuItemClicked = function(index) {
-      console.log("klik ",index)
+    this.onMenuItemClicked = function(item) {
+      console.log("klik ",item)
+      if (item == "Multiplayer") {
+        var room = new Room()
+        room.show(this.node)
+      }
     }
   }
   show() {
@@ -11,32 +19,11 @@ class App {
   }
 }
 
-class Menu {
-  constructor(items) {
-    this.items = items
-  }
-  show(node) {
-    node.innerHTML = ""
-    var tempList = document.getElementById("tList")
-    var clonList = tempList.content.cloneNode(true)
-    node.appendChild(clonList)
-    for (var i = 0; i < this.items.length; i++) {
-      var item = document.createElement('div')
-      item.onclick = (function(idx) {
-        return function() {
-          app.onMenuItemClicked(idx)
-        }
-      })(i)
-      item.addEventListener("click", function(i){
-        return function() {
-          app.onMenuItemClicked(i)
-        }
-      })
-      item.textContent = this.items[i]
-      node.querySelector("#List").appendChild(item)
-    }
-  }
-}
 
 var app = new App(document.getElementById("app_container"))
 app.show()
+
+setCookie("playerId","test1234",1)
+var wsAPI = new WsAPI(new WebSocket("ws://localhost:3000/chat", [] ));
+
+

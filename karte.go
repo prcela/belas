@@ -54,7 +54,7 @@ func main() {
 	})
 
 	if runtime.GOOS == "darwin" {
-		http.ListenAndServe(":3000", nil)
+		http.ListenAndServe(":3001", nil)
 	} else {
 		http.ListenAndServe(":8000", nil)
 	}

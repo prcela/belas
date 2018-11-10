@@ -7,14 +7,33 @@
 <link href="style.css" rel="stylesheet" type="text/css" />
 <meta name="apple-itunes-app" content="app-id=354188615">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<!-- google ad sense -->
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-7085004145685358",
+    enable_page_level_ads: true
+  });
+</script>
 
 <title>yamb</title>
 </head>
 
 <body>
 
+<template id="tList">
+    <div id="List"></div>
+</template>
+<template id="tMenuItem">
+    <div class="MenuItem">
+        Item
+    </div>
+</template>
+
 <div class="c">
-	<table>
+    <div id="app_container"></div>
+	
+    <!-- <table>
 	  	<tr>
   		<td><img src="die.png" alt="die" style="width:100px;height:100px;"></td>
     	<td><h1>Yamb</h1></td>
@@ -24,19 +43,10 @@
 	<p>Facebook <a href="https://www.facebook.com/yambanje/">Yamb community</a>.</p>
 	<h2>Često postavljena pitanja</h2>
 	<h3>Zašto se ne mogu više ulagati i osvajati 💎 u igri?</h3>
-	<p>Međunarodnim zakom zabranjeno je simulirano kockanje u iOS igrama koje su razvili developeri koji nemaju odgovarajuću licencu za pružanje klađenja. U biti, samo kladionice imaju takvo pravo.</p>
+	<p>Međunarodnim zakom zabranjeno je simulirano kockanje u iOS igrama koje su razvili developeri koji nemaju odgovarajuću licencu za pružanje klađenja. U biti, samo kladionice imaju takvo pravo.</p> -->
+
 </div>
-
-<!-- We will put our React component inside this div. -->
-    <div id="like_button_container"></div>
-
-    <!-- Load React. -->
-    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-
-    <!-- Load our React component. -->
-    <script src="like_button.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>

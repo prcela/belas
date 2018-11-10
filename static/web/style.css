@@ -7,18 +7,22 @@ html, body {
 /* For mobile phones */
 [class*="c"] {
 	position: fixed;
-	width: 300px;
-	left: 50%;
-	margin: 0 -150px;
+	left: 0px;
+	right: 0px;
+	top:0px;
+	bottom: 0px;
+	border: 3px solid #73AD21;
+
 }
 
 @media only screen and (min-width: 768px) {
 	.c {
-		position: fixed;
+		position: relative;
 	    width: 620px;
 	    top: 120px;
 	    left: 50%;
-	    margin: 0 -310px
+	    margin: 0 -310px;
+	    border: 3px solid #73AD21;
 	}
 }
 

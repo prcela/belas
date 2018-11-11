@@ -9,6 +9,7 @@ class Menu {
     node.appendChild(clonList)
     for (var i = 0; i < this.items.length; i++) {
       var item = document.createElement('div')
+      item.className = "MenuItem"
       item.onclick = (function(item) {
         return function() {
           app.onMenuItemClicked(item)

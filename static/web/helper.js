@@ -7,3 +7,12 @@ function setCookie(c_name,value,exdays)
                                 + "; path=/";
     document.cookie=c_name + "=" + c_value;
 }
+
+ function sortStrings(a, b)
+ {
+    var x = a.toLowerCase();
+    var y = b.toLowerCase();
+    if (x < y) {return -1;}
+    if (x > y) {return 1;}
+    return 0;
+}

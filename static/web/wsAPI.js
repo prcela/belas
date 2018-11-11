@@ -12,11 +12,7 @@ class WsAPI {
   			Room.tables = json.tables
   			Room.tournaments = json.tournaments
   			Room.one_vs_all = json.one_vs_all
-  			var event = new CustomEvent("onRoomInfo", {
-  				detail:{proba:true},
-  				bubbles: true,
-  				cancelable: false
-  			})
+  			var event = new CustomEvent("onRoomInfo")
   			document.dispatchEvent(event)
   			break
   		}

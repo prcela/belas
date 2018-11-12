@@ -16,3 +16,7 @@ function setCookie(c_name,value,exdays)
     if (x > y) {return 1;}
     return 0;
 }
+
+function splitLines(t) { 
+	return t.split(/\r\n|\r|\n/); 
+}

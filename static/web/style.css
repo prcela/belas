@@ -78,5 +78,15 @@ html, body {
     opacity: 0.5;
 }
 
+.Toolbar {
+	position: absolute;
+    background: #1f1f1f;
+    height: 50px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    color: white;
+    padding-left: 10px;
+}
 
 	

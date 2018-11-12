@@ -5,8 +5,16 @@ class Room {
   constructor(node) {
   	this.node = node
   	this.sections = []
-  	document.roomInfoListeners.push(this)
+  	document.listeners["onRoomInfo"].push(this)
   	wsAPI.roomInfo()
+  }
+  static freePlayers() {
+  	var freePlayers = Object.values(this.players).filter(
+  		function(p) {return !p.hasOwnProperty("tableId") && !p.hasOwnProperty("tournamentId")}
+  		).sort(
+  		function(p0,p1) {return sortStrings(p0.alias,p1.alias)}
+  		)
+  	return freePlayers
   }
   show() {
   	this.node.innerHTML = ""
@@ -18,7 +26,7 @@ class Room {
   		this.appendTable(freeTables[i])
   	}
   	this.appendSection("Free players")
-  	var freePlayers = Object.values(Room.players).sort(function(p0,p1) {return sortStrings(p0.alias,p1.alias)})
+  	var freePlayers = Room.freePlayers()
   	for (var i = 0; i < freePlayers.length; i++) {
   		this.appendPlayer(freePlayers[i])
   	}
@@ -89,5 +97,7 @@ class Room {
   }
 }
 
-Room.players = []
-Room.tables = []
+Room.players = {}
+Room.tables = {}
+Room.on_vs_all = {}
+Room.tournaments = {}

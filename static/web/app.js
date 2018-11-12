@@ -6,17 +6,35 @@ class App {
     this.state = AppState.menu
     this.node = node
     this.menu = new Menu(["Single player","Multiplayer","Leaderboard","Rules","About"])
+    this.playerStat = new PlayerStat()
     this.onMenuItemClicked = function(item) {
       console.log("klik ",item)
       if (item == "Multiplayer") {
-        var room = new Room(this.node)
+        var room = new Room(this.node.firstElementChild)
         room.show()
       }
     }
   }
   show() {
-    this.menu.show(this.node)
+    var navController = document.createElement("div")
+    this.node.appendChild(navController)
+    this.node.appendChild(this.playerStat.node)
+    this.menu.show(navController)
+    this.playerStat.show()
   }
+}
+
+document.listeners = {"onRoomInfo":[], "onPlayerStat":[]}
+var keys = Object.keys(document.listeners)
+for (var i = 0; i < keys.length; i++) {
+  var key = keys[i]
+  document.addEventListener(key, function(e) {
+    var eventListeners = document.listeners[e.type]
+    for (var i = 0; i < eventListeners.length; i++) {
+      eventListeners[i][e.type]()
+    }
+    console.log("ok")
+  })
 }
 
 
@@ -26,11 +44,6 @@ app.show()
 setCookie("playerId","test1234",1)
 var wsAPI = new WsAPI(new WebSocket("ws://localhost:3000/chat", [] ));
 
-document.roomInfoListeners = []
-document.addEventListener('onRoomInfo', function(e) {
-  for (var i = document.roomInfoListeners.length - 1; i >= 0; i--) {
-      document.roomInfoListeners[i].onRoomInfo(e)
-    }
-  console.log("ok")
-})
+
+
 

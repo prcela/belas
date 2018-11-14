@@ -1,27 +1,33 @@
-class Menu {
-  constructor(items) {
+class MenuViewController extends ViewController {
+  constructor(node, items) {
+    super(node)
+    node.className = "MenuViewController"
     this.items = items
   }
-  show(node) {
-    node.innerHTML = ""
+  show() {
+    super.show()
+    this.node.innerHTML = ""
     var tempList = document.getElementById("tList")
     var clonList = tempList.content.cloneNode(true)
-    node.appendChild(clonList)
+    this.node.appendChild(clonList)
     for (var i = 0; i < this.items.length; i++) {
       var item = document.createElement('div')
       item.className = "MenuItem"
       item.onclick = (function(item) {
         return function() {
-          app.onMenuItemClicked(item)
+          this.onMenuItemClicked(item)
         }
       })(this.items[i])
-      item.addEventListener("click", function(i){
-        return function() {
-          app.onMenuItemClicked(i)
-        }
-      })
       item.textContent = this.items[i]
-      node.querySelector("#List").appendChild(item)
+      this.node.querySelector("#List").appendChild(item)
     }
   }
+
+  onMenuItemClicked(item) {
+      console.log("klik ",item)
+      if (item == "Multiplayer") {
+        var room = new RoomViewController(this.node.firstElementChild)
+        this.navigationController.push(room)
+      }
+    }
 }

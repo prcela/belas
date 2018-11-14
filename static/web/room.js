@@ -1,9 +1,10 @@
 var RoomSection = {oneVsAll:0, create:1, freeTables:2, freeTournaments:3, freePlayers:4, tables:5, tournaments:6}
 Object.freeze(RoomSection)
 
-class Room {
+class RoomViewController extends ViewController {
   constructor(node) {
-  	this.node = node
+  	super.constructor(node)
+  	node.className = "RoomViewController"
   	this.sections = []
   	document.listeners["onRoomInfo"].push(this)
   	wsAPI.roomInfo()
@@ -97,6 +98,8 @@ class Room {
   }
 }
 
+class Room {
+}
 Room.players = {}
 Room.tables = {}
 Room.on_vs_all = {}

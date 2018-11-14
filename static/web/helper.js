@@ -20,3 +20,11 @@ function setCookie(c_name,value,exdays)
 function splitLines(t) { 
 	return t.split(/\r\n|\r|\n/); 
 }
+
+
+function stars6(avgScore)
+{
+	var avgScoreMax6 = 1400
+	var avgScoreMin6 = 700
+    return Math.max(0, 10 * (avgScore-avgScoreMin6)/(avgScoreMax6-avgScoreMin6))
+}

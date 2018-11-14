@@ -5,21 +5,17 @@ class App {
   constructor(node) {
     this.state = AppState.menu
     this.node = node
-    this.menu = new Menu(["Single player","Multiplayer","Leaderboard","Rules","About"])
+    var navControllerDiv = document.createElement("div")
+    var menuDiv = document.createElement("div")
+    this.node.appendChild(navControllerDiv)
+    var menu = new MenuViewController(menuDiv, ["Single player","Multiplayer","Leaderboard","Rules","About"])
+    this.navController = new NavigationController(navControllerDiv, menu)
+    
     this.playerStat = new PlayerStat()
-    this.onMenuItemClicked = function(item) {
-      console.log("klik ",item)
-      if (item == "Multiplayer") {
-        var room = new Room(this.node.firstElementChild)
-        room.show()
-      }
-    }
-  }
-  show() {
-    var navController = document.createElement("div")
-    this.node.appendChild(navController)
     this.node.appendChild(this.playerStat.node)
-    this.menu.show(navController)
+  }
+  
+  show() {
     this.playerStat.show()
   }
 }

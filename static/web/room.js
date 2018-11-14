@@ -6,6 +6,7 @@ class RoomViewController extends ViewController {
   	super(node)
   	node.className = "RoomViewController"
   	this.sections = []
+  	this.title = "Multiplayer"
   	document.listeners["onRoomInfo"].push(this)
   	wsAPI.roomInfo()
   }

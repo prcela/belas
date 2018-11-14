@@ -89,4 +89,17 @@ html, body {
     padding-left: 10px;
 }
 
-	
+.NavigationController .Header {
+	height: 60px;
+	line-height: 60px;
+	border: 1px solid #dadada;
+	text-align: center;
+    font-weight: 600;
+	}
+
+.NavigationController .Header .Back {
+	position: absolute;
+    padding-left: 10px;
+    width: 30px;
+    text-align: left;
+}

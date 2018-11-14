@@ -25,9 +25,15 @@ class MenuViewController extends ViewController {
 
   onMenuItemClicked(item) {
       console.log("klik ",item)
-      if (item == "Multiplayer") {
-        var room = new RoomViewController(this.node.firstElementChild)
-        this.navigationController.push(room)
+      switch (item) {
+        case "Multiplayer": 
+          var room = new RoomViewController(document.createElement("div"))
+          this.navigationController.push(room)
+          break
+        case "Rules": {
+          var rules = new RulesViewController(document.createElement("div"))
+          this.navigationController.push(rules)
+        }
       }
     }
 }

@@ -9,6 +9,7 @@ class App {
     var menuDiv = document.createElement("div")
     this.node.appendChild(navControllerDiv)
     var menu = new MenuViewController(menuDiv, ["Single player","Multiplayer","Leaderboard","Rules","About"])
+    menu.title = "Yamb"
     this.navController = new NavigationController(navControllerDiv, menu)
     
     this.playerStat = new PlayerStat()

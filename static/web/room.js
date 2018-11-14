@@ -3,20 +3,13 @@ Object.freeze(RoomSection)
 
 class RoomViewController extends ViewController {
   constructor(node) {
-  	super.constructor(node)
+  	super(node)
   	node.className = "RoomViewController"
   	this.sections = []
   	document.listeners["onRoomInfo"].push(this)
   	wsAPI.roomInfo()
   }
-  static freePlayers() {
-  	var freePlayers = Object.values(this.players).filter(
-  		function(p) {return !p.hasOwnProperty("tableId") && !p.hasOwnProperty("tournamentId")}
-  		).sort(
-  		function(p0,p1) {return sortStrings(p0.alias,p1.alias)}
-  		)
-  	return freePlayers
-  }
+  
   show() {
   	this.node.innerHTML = ""
   	this.appendSection("New game")
@@ -99,6 +92,14 @@ class RoomViewController extends ViewController {
 }
 
 class Room {
+	static freePlayers() {
+  	var freePlayers = Object.values(this.players).filter(
+  		function(p) {return !p.hasOwnProperty("tableId") && !p.hasOwnProperty("tournamentId")}
+  		).sort(
+  		function(p0,p1) {return sortStrings(p0.alias,p1.alias)}
+  		)
+  	return freePlayers
+  }
 }
 Room.players = {}
 Room.tables = {}

@@ -13,11 +13,11 @@ class MenuViewController extends ViewController {
     for (var i = 0; i < this.items.length; i++) {
       var item = document.createElement('div')
       item.className = "MenuItem"
-      item.onclick = (function(item) {
+      item.onclick = (function(menu,item) {
         return function() {
-          this.onMenuItemClicked(item)
+          menu.onMenuItemClicked(item)
         }
-      })(this.items[i])
+      })(this,this.items[i])
       item.textContent = this.items[i]
       this.node.querySelector("#List").appendChild(item)
     }

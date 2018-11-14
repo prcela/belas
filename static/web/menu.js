@@ -24,16 +24,22 @@ class MenuViewController extends ViewController {
   }
 
   onMenuItemClicked(item) {
-      console.log("klik ",item)
-      switch (item) {
-        case "Multiplayer": 
-          var room = new RoomViewController(document.createElement("div"))
-          this.navigationController.push(room)
-          break
-        case "Rules": {
-          var rules = new RulesViewController(document.createElement("div"))
-          this.navigationController.push(rules)
-        }
-      }
+    console.log("klik ",item)
+    switch (item) {
+      case "Multiplayer": 
+        var room = new RoomViewController(document.createElement("div"))
+        this.navigationController.push(room)
+        break
+      case "Rules": 
+        var rules = new RulesViewController(document.createElement("div"))
+        this.navigationController.push(rules)
+        break
+      case "About": 
+        var about = new AboutViewController(document.createElement("div"))
+        this.navigationController.push(about)
+        break
     }
+  }
+
 }
+
